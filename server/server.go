@@ -16,8 +16,10 @@ import (
 	"github.com/jasonlvhit/gocron"
 	"github.com/spf13/cobra"
 
+	"github.com/cpanato/mattermost-away-reminder/gcalendar"
 	"github.com/cpanato/mattermost-away-reminder/model"
 	"github.com/cpanato/mattermost-away-reminder/store"
+	"github.com/cpanato/mattermost-away-reminder/utils"
 )
 
 type Server struct {
@@ -30,11 +32,13 @@ const (
 )
 
 var (
-	Srv *Server
+	Srv       *Server
+	startTime time.Time
 )
 
 func Start() {
 	fmt.Println("Starting Away Bot")
+	startTime = time.Now()
 
 	Srv = &Server{
 		Store:  store.NewSqlStore(Config.DriverName, Config.DataSource),
@@ -53,7 +57,8 @@ func Start() {
 
 	}()
 
-	gocron.Every(12).Hours().Do(postAways)
+	fmt.Printf("Will post the time away every %v hours\n", Config.WebhookNotificationTimeInHours)
+	gocron.Every(Config.WebhookNotificationTimeInHours).Hours().Do(postAways)
 	gocron.Every(1).Day().Do(removeOldAways)
 	fmt.Println("Starting timer")
 	<-gocron.Start()
@@ -67,7 +72,8 @@ func addApis(r *mux.Router) {
 }
 
 func indexHandler(res http.ResponseWriter, req *http.Request) {
-	res.Write([]byte("This is the mattermost Time Away Bot Server."))
+	msg := fmt.Sprintf("This is the mattermost Time Away Bot Server. Uptime = %v", utils.Uptime(startTime))
+	res.Write([]byte(msg))
 }
 
 func pingHandler(res http.ResponseWriter, req *http.Request) {
@@ -79,7 +85,7 @@ func pingHandler(res http.ResponseWriter, req *http.Request) {
 // 	resp := "Deleted"
 // 	body, _ := ioutil.ReadAll(r.Body)
 // 	msg := string(body)
-
+// 	fmt.Println(msg)
 // 	WriteIntegrationResponse(w, resp)
 // }
 
@@ -216,11 +222,25 @@ func saveAwayCommandF(args []string, w http.ResponseWriter, slashCommand *model.
 		return err
 	}
 
+	reason := strings.Join(args, " ")
+	//If integration with Google Calendar is enable try to add the away in the calendar
+	id := ""
+	if Config.GoogleCalendarIntegration {
+		gFrom := strings.Replace(from, "/", "-", -1)
+		gTo := strings.Replace(to, "/", "-", -1)
+		id, err = gcalendar.AddEventToGCal(reason, gFrom, gTo, Config.GoogleCalendarId)
+		if err != nil {
+			fmt.Printf("Error to add the event to Google Calendar. Err=%v", err)
+		}
+	}
+
 	saveAway := &model.Away{
-		Start:    strconv.FormatInt(fromParsed.Unix(), 10),
-		End:      strconv.FormatInt(toParsed.Unix(), 10),
-		UserName: userName,
-		Reason:   strings.Join(args, " "),
+		Start:       strconv.FormatInt(fromParsed.Unix(), 10),
+		End:         strconv.FormatInt(toParsed.Unix(), 10),
+		UserName:    userName,
+		UserId:      slashCommand.UserId,
+		Reason:      reason,
+		GoogleCalId: id,
 	}
 	if result := <-Srv.Store.Away().Save(saveAway); result.Err != nil {
 		return model.NewLocAppError("Mattermost Time Away", "Error to save the time away", nil, result.Err.Error())
@@ -248,7 +268,7 @@ func listUserAwaysCommandF(args []string, w http.ResponseWriter, slashCommand *m
 		msg := fmt.Sprintf("Id: %v From: %v To: %v Reason: %v", away.Id, time.Unix(startInt, 0).Format(LAYOUT), time.Unix(endInt, 0).Format(LAYOUT), away.Reason)
 
 		attach := model.MMAttachment{}
-		// attachment1 = append(attachment1, *attach.AddField(model.MMField{Title: "Time Away", Value: msg}).AddAction(model.MMAction{Name: "Delete", Integration: &model.MMActionIntegration{URL: "http://localhost:8087/delete", Context: model.StringInterface{"id": away.Id}}}))
+		// attachment1 = append(attachment1, *attach.AddField(model.MMField{Title: "Time Away", Value: msg}).AddAction(model.MMAction{Id: "wswpm1zxr7dzbf3fb8ihip158" + strconv.Itoa(away.Id), Name: "Delete", Integration: &model.MMActionIntegration{URL: "http://localhost:8087/delete", Context: model.StringInterface{"action": away.Id}}}))
 		attachment1 = append(attachment1, *attach.AddField(model.MMField{Title: "Time Away", Value: msg}))
 	}
 
@@ -295,13 +315,12 @@ func listAllAwaysCommandF(args []string, w http.ResponseWriter, slashCommand *mo
 		msg := fmt.Sprintf("User: @%v From: %v To: %v Reason: %v", away.UserName, time.Unix(startInt, 0).Format(LAYOUT), time.Unix(endInt, 0).Format(LAYOUT), away.Reason)
 
 		attach := model.MMAttachment{}
-		// attachment1 = append(attachment1, *attach.AddField(model.MMField{Title: "Time Away", Value: msg}).AddAction(model.MMAction{Name: "Delete", Integration: &model.MMActionIntegration{URL: "http://localhost:8087/delete", Context: model.StringInterface{"id": away.Id}}}))
 		attachment1 = append(attachment1, *attach.AddField(model.MMField{Title: "Time Away", Value: msg}))
 	}
 
 	payload := model.MMSlashResponse{
 		ResponseType: "ephemeral",
-		Text:         "List of Aways for all users",
+		Text:         "List of Aways for all users for today: " + time.Now().Format(LAYOUT),
 		Username:     "TimeAway",
 		IconUrl:      "https://png.icons8.com/ios/1600/sunbathe.png",
 		Attachments:  attachment1,
@@ -337,6 +356,13 @@ func deleteUserAwaysCommandF(args []string, w http.ResponseWriter, slashCommand 
 		if result := <-Srv.Store.Away().DeleteAway(id); result.Err != nil {
 			fmt.Println(result.Err.Error())
 			return result.Err
+		}
+	}
+
+	if Config.GoogleCalendarIntegration {
+		err := gcalendar.RemoveEventFromGCal(result.Data.(*model.Away).GoogleCalId, Config.GoogleCalendarId)
+		if err != nil {
+			fmt.Printf("Error to add the event to Google Calendar. Err=%v", err)
 		}
 	}
 

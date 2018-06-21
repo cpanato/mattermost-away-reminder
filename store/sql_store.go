@@ -89,7 +89,14 @@ func NewSqlStore(driverName, dataSource string) Store {
 
 	sqlStore.awaystore.(*SqlAwayStore).CreateIndexesIfNotExists()
 
+	UpgradeDatabase_GCal(sqlStore)
+
 	return sqlStore
+}
+
+func UpgradeDatabase_GCal(sqlStore *SqlStore) {
+	sqlStore.CreateColumnIfNotExists("Away", "GoogleCalId", "varchar(128)", "varchar(128)", "")
+	sqlStore.CreateColumnIfNotExists("Away", "UserId", "varchar(128)", "varchar(128)", "")
 }
 
 func (ss *SqlStore) DoesTableExist(tableName string) bool {

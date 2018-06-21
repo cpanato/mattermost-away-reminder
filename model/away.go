@@ -6,11 +6,13 @@ import (
 )
 
 type Away struct {
-	Id       int
-	Start    string
-	End      string
-	UserName string
-	Reason   string
+	Id          int
+	Start       string
+	End         string
+	UserName    string
+	UserId      string
+	Reason      string
+	GoogleCalId string
 }
 
 func (o *Away) ToJson() (string, error) {

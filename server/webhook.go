@@ -57,10 +57,12 @@ func postAways() {
 		attachment1 = append(attachment1, *attach.AddField(model.MMField{Title: "Time Away", Value: msg}))
 	}
 	payload := model.MMSlashResponse{
-		Text:        "List of Aways for " + time.Now().Format(LAYOUT),
+		Text:        "List of #TimeAway for " + time.Now().Format(LAYOUT),
 		Username:    "TimeAway",
 		IconUrl:     "https://png.icons8.com/ios/1600/sunbathe.png",
 		Attachments: attachment1,
 	}
-	Send(Config.MMIncomingWebhook, payload)
+	if Config.MMIncomingWebhook != "" {
+		Send(Config.MMIncomingWebhook, payload)
+	}
 }

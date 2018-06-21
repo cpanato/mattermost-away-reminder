@@ -3,5 +3,8 @@
     "DriverName": "mysql",
     "DataSource": "matteraway:matteraway@tcp(localhost:3307)/matteraway?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s",
     "MMIncomingWebhook": "",
-    "AllowedTokens": [""]
+    "AllowedTokens": [""],
+    "WebhookNotificationTimeInHours": 3,
+    "GoogleCalendarIntegration": false,
+    "GoogleCalendarId": ""
 }

@@ -8,11 +8,14 @@ import (
 )
 
 type AwayServerConfig struct {
-	ListenAddress     string
-	DriverName        string
-	DataSource        string
-	MMIncomingWebhook string
-	AllowedTokens     []string
+	ListenAddress                  string
+	DriverName                     string
+	DataSource                     string
+	MMIncomingWebhook              string
+	AllowedTokens                  []string
+	WebhookNotificationTimeInHours uint64
+	GoogleCalendarIntegration      bool
+	GoogleCalendarId               string
 }
 
 var Config *AwayServerConfig = &AwayServerConfig{}
