@@ -200,6 +200,7 @@ func slashCommandHandler(w http.ResponseWriter, r *http.Request) {
 
 func saveAwayCommandF(args []string, w http.ResponseWriter, slashCommand *model.MMSlashCommand, from, to string) error {
 	userName := slashCommand.Username
+	toDate := to
 	if len(args) == 0 {
 		return model.NewLocAppError("Mattermost Time Away", "You need to specify a reason", nil, "")
 	}
@@ -226,8 +227,12 @@ func saveAwayCommandF(args []string, w http.ResponseWriter, slashCommand *model.
 	//If integration with Google Calendar is enable try to add the away in the calendar
 	id := ""
 	if Config.GoogleCalendarIntegration {
+		if toDate > from {
+			toWith1DayMore := toParsed.AddDate(0, 0, 1)
+			toDate = toWith1DayMore.Format(LAYOUT)
+		}
 		gFrom := strings.Replace(from, "/", "-", -1)
-		gTo := strings.Replace(to, "/", "-", -1)
+		gTo := strings.Replace(toDate, "/", "-", -1)
 		id, err = gcalendar.AddEventToGCal(reason, gFrom, gTo, Config.GoogleCalendarId)
 		if err != nil {
 			fmt.Printf("Error to add the event to Google Calendar. Err=%v", err)

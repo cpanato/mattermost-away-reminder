@@ -37,7 +37,7 @@ func postAways() {
 	if result := <-Srv.Store.Away().GetAwaysForToday(strconv.FormatInt(t.Unix(), 10)); result.Err != nil {
 		fmt.Println(result.Err.Error())
 		return
-	} else if result.Data == nil {
+	} else if len(result.Data.([]*model.Away)) == 0 {
 		fmt.Println("nothing for today")
 		return
 	} else {
