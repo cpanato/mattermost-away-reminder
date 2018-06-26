@@ -45,10 +45,6 @@
   name = "github.com/gorilla/mux"
   version = "1.6.2"
 
-[[constraint]]
-  branch = "master"
-  name = "github.com/jasonlvhit/gocron"
-
 [prune]
   go-tests = true
   unused-packages = true

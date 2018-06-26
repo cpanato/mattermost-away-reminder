@@ -62,12 +62,6 @@
   version = "v1.0"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/jasonlvhit/gocron"
-  packages = ["."]
-  revision = "54194c9749d48b073c9aeb2c787b6882e95dd0cd"
-
-[[projects]]
   name = "github.com/spf13/cobra"
   packages = ["."]
   revision = "ef82de70bb3f60c65fb8eebacbb2d122ef517385"
@@ -128,9 +122,15 @@
   revision = "b1f26356af11148e710935ed1ac8a7f5702c7612"
   version = "v1.1.0"
 
+[[projects]]
+  branch = "v2"
+  name = "gopkg.in/robfig/cron.v2"
+  packages = ["."]
+  revision = "be2e0b0deed5a68ffee390b4583a13aff8321535"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "03269d9d538e34f99c9135589cbf968d8b1cdab5a81142d297e5d299db4701be"
+  inputs-digest = "b8951d2e4cd5f5c51f8750bd00668bd70f770c8fef025ccd29ecc96bd232424a"
   solver-name = "gps-cdcl"
   solver-version = 1

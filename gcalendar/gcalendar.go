@@ -114,14 +114,15 @@ func getGClient() *calendar.Service {
 	return srv
 }
 
-func AddEventToGCal(text, fromDate, toDate, calendarId string) (string, error) {
+func AddEventToGCal(userName, text, fromDate, toDate, calendarId string) (string, error) {
 
 	srv := getGClient()
 	fmt.Println("Adding one Event")
 
+	msg := fmt.Sprintf("%v: %v", userName, text)
 	event := &calendar.Event{
-		Summary:     text,
-		Description: text,
+		Summary:     msg,
+		Description: msg,
 		Start: &calendar.EventDateTime{
 			Date: fromDate,
 		},

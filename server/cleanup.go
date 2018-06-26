@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func removeOldAways() {
+func RemoveOldAways() {
 	timeNow, err := time.Parse(LAYOUT, time.Now().Format(LAYOUT))
 	if err != nil {
 		fmt.Println(err)
@@ -18,4 +18,6 @@ func removeOldAways() {
 		fmt.Println(result.Err.Error())
 	}
 	fmt.Println("Finish the cleanup of old aways")
+
+	return
 }

@@ -13,7 +13,6 @@ import (
 	"github.com/braintree/manners"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
-	"github.com/jasonlvhit/gocron"
 	"github.com/spf13/cobra"
 
 	"github.com/cpanato/mattermost-away-reminder/gcalendar"
@@ -57,11 +56,6 @@ func Start() {
 
 	}()
 
-	fmt.Printf("Will post the time away every %v hours\n", Config.WebhookNotificationTimeInHours)
-	gocron.Every(Config.WebhookNotificationTimeInHours).Hours().Do(postAways)
-	gocron.Every(1).Day().Do(removeOldAways)
-	fmt.Println("Starting timer")
-	<-gocron.Start()
 }
 
 func addApis(r *mux.Router) {
@@ -233,7 +227,7 @@ func saveAwayCommandF(args []string, w http.ResponseWriter, slashCommand *model.
 		}
 		gFrom := strings.Replace(from, "/", "-", -1)
 		gTo := strings.Replace(toDate, "/", "-", -1)
-		id, err = gcalendar.AddEventToGCal(reason, gFrom, gTo, Config.GoogleCalendarId)
+		id, err = gcalendar.AddEventToGCal(userName, reason, gFrom, gTo, Config.GoogleCalendarId)
 		if err != nil {
 			fmt.Printf("Error to add the event to Google Calendar. Err=%v", err)
 		}

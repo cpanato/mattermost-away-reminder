@@ -27,7 +27,7 @@ func Send(webhookUrl string, payload model.MMSlashResponse) {
 
 }
 
-func postAways() {
+func PostAways() {
 	t, err := time.Parse(LAYOUT, time.Now().Format(LAYOUT))
 	if err != nil {
 		fmt.Println(err)
@@ -65,4 +65,6 @@ func postAways() {
 	if Config.MMIncomingWebhook != "" {
 		Send(Config.MMIncomingWebhook, payload)
 	}
+
+	return
 }
