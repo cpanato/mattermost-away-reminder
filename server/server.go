@@ -4,21 +4,21 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	// "io/ioutil"
+
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/braintree/manners"
-	"github.com/gorilla/mux"
-	"github.com/gorilla/schema"
-	"github.com/spf13/cobra"
-
 	"github.com/cpanato/mattermost-away-reminder/gcalendar"
 	"github.com/cpanato/mattermost-away-reminder/model"
 	"github.com/cpanato/mattermost-away-reminder/store"
 	"github.com/cpanato/mattermost-away-reminder/utils"
+
+	"github.com/braintree/manners"
+	"github.com/gorilla/mux"
+	"github.com/gorilla/schema"
+	"github.com/spf13/cobra"
 )
 
 type Server struct {
@@ -227,7 +227,7 @@ func saveAwayCommandF(args []string, w http.ResponseWriter, slashCommand *model.
 		}
 		gFrom := strings.Replace(from, "/", "-", -1)
 		gTo := strings.Replace(toDate, "/", "-", -1)
-		id, err = gcalendar.AddEventToGCal(userName, reason, gFrom, gTo, Config.GoogleCalendarId)
+		id, err = gcalendar.AddEventToGCal(userName, reason, gFrom, gTo, Config.GoogleCalendarId, Config.GoogleCalendarAPIKey)
 		if err != nil {
 			fmt.Printf("Error to add the event to Google Calendar. Err=%v", err)
 		}
@@ -359,7 +359,7 @@ func deleteUserAwaysCommandF(args []string, w http.ResponseWriter, slashCommand 
 	}
 
 	if Config.GoogleCalendarIntegration {
-		err := gcalendar.RemoveEventFromGCal(result.Data.(*model.Away).GoogleCalId, Config.GoogleCalendarId)
+		err := gcalendar.RemoveEventFromGCal(result.Data.(*model.Away).GoogleCalId, Config.GoogleCalendarId, Config.GoogleCalendarAPIKey)
 		if err != nil {
 			fmt.Printf("Error to add the event to Google Calendar. Err=%v", err)
 		}
@@ -380,9 +380,3 @@ func WriteResponse(w http.ResponseWriter, resp string, msgType string) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(model.GenerateStandardSlashResponse(resp, msgType)))
 }
-
-// func WriteIntegrationResponse(w http.ResponseWriter, resp string) {
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.WriteHeader(http.StatusOK)
-// 	w.Write([]byte(model.GenerateIntegrationResponse(resp)))
-// }

@@ -1,126 +1,27 @@
 package gcalendar
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"net/http"
-	"os"
-	"path/filepath"
-
-	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/calendar/v3"
 
 	"github.com/cpanato/mattermost-away-reminder/model"
+
+	"google.golang.org/api/calendar/v3"
+	"google.golang.org/api/option"
 )
 
-// Retrieve a token, saves the token, then returns the generated client.
-func getClient(config *oauth2.Config) *http.Client {
-	tokFile := "token.json"
-	tok, err := tokenFromFile(tokFile)
-	fmt.Println(err)
+func AddEventToGCal(userName, text, fromDate, toDate, calendarId, calendarAPIKey string) (string, error) {
+
+	calendarService, err := calendar.NewService(context.Background(), option.WithAPIKey(calendarAPIKey))
 	if err != nil {
-		tok = getTokenFromWeb(config)
-		saveToken(tokFile, tok)
+		log.Fatalf("Unable to create Calendar service: %v", err)
 	}
 
-	return config.Client(context.Background(), tok)
-}
-
-// Request a token from the web, then returns the retrieved token.
-func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
-	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline, oauth2.ApprovalForce)
-	fmt.Printf("Go to the following link in your browser then type the "+
-		"authorization code: \n%v\n", authURL)
-
-	var authCode string
-	if _, err := fmt.Scan(&authCode); err != nil {
-		log.Fatalf("Unable to read authorization code: %v", err)
-	}
-
-	tok, err := config.Exchange(oauth2.NoContext, authCode)
-	if err != nil {
-		log.Fatalf("Unable to retrieve token from web: %v", err)
-	}
-	return tok
-}
-
-// Retrieves a token from a local file.
-func tokenFromFile(file string) (*oauth2.Token, error) {
-	fileName := FindClientAndTokenFile(file)
-	fmt.Println("Loading " + fileName)
-	f, err := os.Open(fileName)
-	defer f.Close()
-	if err != nil {
-		return nil, err
-	}
-	tok := &oauth2.Token{}
-	err = json.NewDecoder(f).Decode(tok)
-	return tok, err
-}
-
-// Saves a token to a file path.
-func saveToken(path string, token *oauth2.Token) {
-	fmt.Printf("Saving credential file to: %s\n", path)
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-	defer f.Close()
-	if err != nil {
-		log.Fatalf("Unable to cache oauth token: %v", err)
-	}
-	json.NewEncoder(f).Encode(token)
-}
-
-func FindClientAndTokenFile(fileName string) string {
-	if _, err := os.Stat("/tmp/" + fileName); err == nil {
-		fileName, _ = filepath.Abs("/tmp/" + fileName)
-	} else if _, err := os.Stat("./config/" + fileName); err == nil {
-		fileName, _ = filepath.Abs("./config/" + fileName)
-	} else if _, err := os.Stat("../config/" + fileName); err == nil {
-		fileName, _ = filepath.Abs("../config/" + fileName)
-	} else if _, err := os.Stat("./client/" + fileName); err == nil {
-		fileName, _ = filepath.Abs("./client/" + fileName)
-	} else if _, err := os.Stat("./token/" + fileName); err == nil {
-		fileName, _ = filepath.Abs("./token/" + fileName)
-	} else if _, err := os.Stat(fileName); err == nil {
-		fileName, _ = filepath.Abs(fileName)
-	}
-
-	return fileName
-}
-
-func getGClient() *calendar.Service {
-	fileName := FindClientAndTokenFile("client_secret.json")
-	fmt.Println("Loading " + fileName)
-
-	b, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		log.Fatalf("Unable to read client secret file: %v", err)
-	}
-
-	// If modifying these scopes, delete your previously saved client_secret.json.
-	config, err := google.ConfigFromJSON(b, calendar.CalendarScope)
-	if err != nil {
-		log.Fatalf("Unable to parse client secret file to config: %v", err)
-	}
-
-	srv, err := calendar.New(getClient(config))
-	if err != nil {
-		log.Fatalf("Unable to retrieve Calendar client: %v", err)
-	}
-
-	return srv
-}
-
-func AddEventToGCal(userName, text, fromDate, toDate, calendarId string) (string, error) {
-
-	srv := getGClient()
 	fmt.Println("Adding one Event")
 
 	msg := fmt.Sprintf("%v: %v", userName, text)
-	event := &calendar.Event{
+	eventToSave := &calendar.Event{
 		Summary:     msg,
 		Description: msg,
 		Start: &calendar.EventDateTime{
@@ -131,7 +32,7 @@ func AddEventToGCal(userName, text, fromDate, toDate, calendarId string) (string
 		},
 	}
 
-	event, err := srv.Events.Insert(calendarId, event).Do()
+	event, err := calendarService.Events.Insert(calendarId, eventToSave).Do()
 	if err != nil {
 		log.Fatalf("Unable to create event. %v\n", err)
 	}
@@ -141,11 +42,15 @@ func AddEventToGCal(userName, text, fromDate, toDate, calendarId string) (string
 
 }
 
-func RemoveEventFromGCal(id, calendarId string) error {
-	srv := getGClient()
+func RemoveEventFromGCal(id, calendarId, calendarAPIKey string) error {
+	calendarService, err := calendar.NewService(context.Background(), option.WithAPIKey(calendarAPIKey))
+	if err != nil {
+		log.Fatalf("Unable to create Calendar service: %v", err)
+	}
+
 	fmt.Println("Removing Event")
 
-	event := srv.Events.Delete(calendarId, id).Do()
+	event := calendarService.Events.Delete(calendarId, id).Do()
 	if event != nil {
 		msg := fmt.Sprintf("Unable to delete event. %v", event)
 		fmt.Println(msg)

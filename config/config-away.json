@@ -5,6 +5,7 @@
     "MMIncomingWebhook": "",
     "AllowedTokens": [""],
     "WebhookNotificationTimeInHours": 3,
-    "GoogleCalendarIntegration": false,
-    "GoogleCalendarId": ""
+    "GoogleCalendarIntegration": true,
+    "GoogleCalendarId": "",
+    "GoogleCalendarAPIKey": ""
 }

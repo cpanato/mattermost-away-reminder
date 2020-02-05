@@ -16,6 +16,7 @@ type AwayServerConfig struct {
 	WebhookNotificationTimeInHours uint64
 	GoogleCalendarIntegration      bool
 	GoogleCalendarId               string
+	GoogleCalendarAPIKey           string
 }
 
 var Config *AwayServerConfig = &AwayServerConfig{}
