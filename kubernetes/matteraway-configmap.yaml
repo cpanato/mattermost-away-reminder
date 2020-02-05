@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: matteraway-config
+  namespace: matteraway
+data:
+  config-away.json: |
+    {
+        "ListenAddress": "0.0.0.0:8087",
+        "DriverName": "mysql",
+        "DataSource": "matteraway:PASSWORD@tcp(HOST:3306)/matteraway?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s",
+        "MMIncomingWebhook": "",
+        "AllowedTokens": [""],
+        "WebhookNotificationTimeInHours": 8,
+        "GoogleCalendarIntegration": false,
+        "GoogleCalendarId": "",
+        "GoogleCalendarAPIKey": ""
+    }
